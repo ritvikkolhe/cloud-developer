@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, request } from 'express';
 import { FeedItem } from '../models/FeedItem';
 import { requireAuth } from '../../users/routes/auth.router';
 import * as AWS from '../../../../aws';
@@ -18,13 +18,27 @@ router.get('/', async (req: Request, res: Response) => {
 
 //@TODO
 //Add an endpoint to GET a specific resource by Primary Key
+router.get('/:id', async (req: Request, res: Response) => {
+    const item = await FeedItem.findByPk(req.params.id);
+    if(!item) {
+        res.send(400)
+    }
+    else {
+        res.send(item);
+    }
+});
 
 // update a specific resource
 router.patch('/:id', 
     requireAuth, 
     async (req: Request, res: Response) => {
         //@TODO try it yourself
-        res.send(500).send("not implemented")
+        const item = await FeedItem.findByPk(req.params.id);
+        item.caption = req.body.caption;
+        item.url = req.body.url;
+        const saved_item = await item.save();
+        saved_item.url = AWS.getGetSignedUrl(saved_item.url);
+        res.status(200).send(saved_item);
 });
 
 
